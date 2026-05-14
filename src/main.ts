@@ -32,6 +32,9 @@ const DEFAULT_SETTINGS: SimpleTableMathSettings = {
 	skipHeaderRow: false,
 }
 
+const FORMULA_CELL_REGEX = /^(sum|avg|min|max|sub|mul|div)([<^>v])(\d+(?::\d+)?)?([a-z]{2,4})?(#e\d+)?$/i;
+const SEPARATOR_CELL_REGEX = /^:?-+:?$/;
+
 /**
  * A plugin that performs mathematical operations on Markdown tables in Obsidian.
  * The plugin actively listens to user interactions and processes table data accordingly.
@@ -109,6 +112,10 @@ export default class SimpleTableMath extends Plugin {
 			const viewMode = activeView?.getMode() || null;
 			const isReadingMode = viewMode === 'preview';
 
+			if (!isReadingMode && activeView) {
+				this.restoreFormulaRowAtBottom(activeView);
+			}
+
 			let tables: HTMLTableElement[] = [];
 			const tableSelector = isReadingMode ? 'div.el-table > table' : 'div.markdown-rendered table.table-editor';
 			if (isReadingMode || this.forceProcessing) {
@@ -135,7 +142,7 @@ export default class SimpleTableMath extends Plugin {
 					const cells = Array.from(row.children) as HTMLTableCellElement[];
 					cells.forEach((cell, colIndex) => {
 						const rawText = this.extractCellContent(cell).trim().toLowerCase() || '';
-						const match = rawText.match(/^([a-z]{3})([<^])(?:(\d+)(?::(\d+))?)?([a-z]{2,4})?(?:\#e(\d+))?$/i);
+						const match = rawText.match(/^([a-z]{3})([<^>v])(?:(\d+)(?::(\d+))?)?([a-z]{2,4})?(?:\#e(\d+))?$/i);
 						const isActiveElement = this.isDocumentActiveElementChildOf(cell)
 						if (match && !isActiveElement) {
 							const operation = match[1].toLowerCase();
@@ -180,6 +187,34 @@ export default class SimpleTableMath extends Plugin {
 									for (let c = actualStartCol; c <= finalEndCol; c++) {
 										const leftCell = cells[c] as HTMLTableCellElement | undefined | null;
 										const textContent = this.extractCellContent(leftCell, true);
+										const value = this.extractNumber(textContent, numRegex);
+										if (value !== null) {
+											values.push(value);
+										}
+									}
+								}
+							} else if (direction === '>') {
+								const actualStartCol = Math.max(colIndex + 1, startIndex);
+								const actualEndCol = endIndex !== -1 ? endIndex : cells.length - 1;
+								const finalEndCol = Math.min(actualEndCol, cells.length - 1);
+								if (actualStartCol <= finalEndCol) {
+									for (let c = actualStartCol; c <= finalEndCol; c++) {
+										const rightCell = cells[c] as HTMLTableCellElement | undefined | null;
+										const textContent = this.extractCellContent(rightCell, true);
+										const value = this.extractNumber(textContent, numRegex);
+										if (value !== null) {
+											values.push(value);
+										}
+									}
+								}
+							} else if (direction === 'v') {
+								const actualStartRow = Math.max(rowIndex + 1, startIndex);
+								const actualEndRow = endIndex !== -1 ? endIndex : rows.length - 1;
+								const finalEndRow = Math.min(actualEndRow, rows.length - 1);
+								if (actualStartRow <= finalEndRow) {
+									for (let r = actualStartRow; r <= finalEndRow; r++) {
+										const belowCell = rows[r]?.children?.[colIndex] as HTMLTableCellElement | undefined | null;
+										const textContent = this.extractCellContent(belowCell, true);
 										const value = this.extractNumber(textContent, numRegex);
 										if (value !== null) {
 											values.push(value);
@@ -257,6 +292,53 @@ export default class SimpleTableMath extends Plugin {
 			});
 		}
 		this.preventProcessing = false;
+	}
+
+	restoreFormulaRowAtBottom(activeView: MarkdownView): void {
+		const editor = activeView.editor;
+		const lineCount = editor.lineCount();
+		const cursor = editor.getCursor();
+		let cursorLine = cursor.line;
+		if (cursorLine >= lineCount) return;
+
+		const isTableLine = (n: number) => {
+			if (n < 0 || n >= lineCount) return false;
+			const text = editor.getLine(n);
+			return !!text && text.trim().startsWith('|');
+		};
+		if (!isTableLine(cursorLine)) return;
+
+		let tableStart = cursorLine;
+		while (isTableLine(tableStart - 1)) tableStart--;
+		let tableEnd = cursorLine;
+		while (isTableLine(tableEnd + 1)) tableEnd++;
+
+		if (tableEnd - tableStart < 3) return;
+
+		const lineHasFormula = (line: string) =>
+			line.split('|').some(c => FORMULA_CELL_REGEX.test(c.trim()));
+		const isSeparator = (line: string) => {
+			const cells = line.split('|').slice(1, -1).map(c => c.trim());
+			return cells.length > 0 && cells.every(c => SEPARATOR_CELL_REGEX.test(c));
+		};
+
+		const lastLine = editor.getLine(tableEnd);
+		const secondLastLine = editor.getLine(tableEnd - 1);
+		if (lineHasFormula(lastLine)) return;
+		if (!lineHasFormula(secondLastLine)) return;
+		if (isSeparator(secondLastLine)) return;
+
+		editor.replaceRange(
+			lastLine + '\n' + secondLastLine,
+			{ line: tableEnd - 1, ch: 0 },
+			{ line: tableEnd, ch: lastLine.length }
+		);
+
+		if (cursor.line === tableEnd) {
+			editor.setCursor({ line: tableEnd - 1, ch: Math.min(cursor.ch, lastLine.length) });
+		} else if (cursor.line === tableEnd - 1) {
+			editor.setCursor({ line: tableEnd, ch: Math.min(cursor.ch, secondLastLine.length) });
+		}
 	}
 
 	//----------------------------------
