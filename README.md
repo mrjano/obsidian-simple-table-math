@@ -8,7 +8,10 @@ You can also copy the results to your clipboard, either via a keyboard shortcut 
 > - `>` (right) and `v` (down) directions, alongside the existing `^` and `<`
 > - "Skip header row" setting to exclude the header from `^` calculations
 > - Automatic restore of the formula row to the bottom of the table after inserting a new row with Obsidian's `+` button
-> - Per-column number formatting via a header-cell hint (currency, decimal places, and optional column aggregate)
+> - **Per-column header directives** (`[CURRENCY,DECIMALS,AGGREGATE:LABEL]`) for:
+>   - Formatting every numeric value in a column (currency code and/or fixed decimal places)
+>   - Rendering a non-editable aggregate footer row at the bottom of the table without writing it into the markdown
+>   - Adding a free-text label to the synthetic row (e.g. `Total: $1.50`)
 
 https://github.com/user-attachments/assets/af3b295f-5bbd-497f-b507-696e9fcbb690
 
@@ -118,7 +121,8 @@ The correct column will ouput 1.0192e+3 while the incorrect column will output 0
 * **Copy Results:** When copying a cell containing an operation (using `Ctrl + C` or `⌘ + C`) or the context menu, the calculated result will be copied to your clipboard.
 * **Formula Row Stays at the Bottom:** When you insert a new row with Obsidian's `+` button under a table whose last row contains a formula, the formula row automatically slides back down so the new (empty) row ends up above it.
 * **Per-Column Formatting:** Add `[USD]`, `[USD,2]`, or `[,3]` to a header cell to format every numeric value below it with that currency and/or decimal count.
-* **Synthetic Aggregate Row:** Add a third part to the directive (`[USD,2,sum]`) to render an aggregate footer row at the bottom of the table without writing it into the markdown.
+* **Synthetic Aggregate Row:** Add an aggregate operation to the directive (`[USD,2,sum]`) to render an aggregate footer row at the bottom of the table without writing it into the markdown.
+* **Synthetic Row Labels:** Append `:Label` to any header directive (e.g. `[:Total:]` or `[USD,2,sum:Total]`) to add free-text labels to the synthetic row.
 
 ## Settings
 
@@ -149,25 +153,19 @@ You can find an example CSS snippet in the [snippet.css](https://github.com/eatc
 
 ## Installation
 
-### From the Obsidian Community Plugins Tab:
+This fork is not in the Obsidian Community Plugins directory. Install it with [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) or manually:
 
-1.  Open Obsidian.
-2.  Go to `Settings` -> `Community plugins`.
-3.  Make sure `Safe mode` is off.
-4.  Click `Browse` and search for "Simple Table Math".
-5.  Click `Install` and then `Enable` the plugin.
+### With BRAT
 
-### Manually:
+1. Install the BRAT plugin from the Obsidian Community Plugins tab and enable it.
+2. Open BRAT settings → `Add beta plugin` and paste `mrjano/obsidian-simple-table-math`.
+3. Enable the plugin under `Settings` → `Community plugins`.
 
-You can install it either by using [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) or manually by following the instructions below:
+### Manually
 
-1.  Download the latest release from the [Releases](https://github.com/eatcodeplay/obsidian-simple-table-math/releases) page.
-2.  Extract the downloaded ZIP content into a new folder in your Obsidian vault's plugins folder (e.g., `<your_vault>/.obsidian/plugins/simple-table-math`).
-3.  **Note:** On some operating systems, the `.obsidian` folder might be hidden. Make sure to show hidden files in your file explorer.
-4.  Open Obsidian.
-5.  Go to `Settings` -> `Community plugins`.
-6.  Make sure `Safe mode` is off.
-7.  Find "Simple Table Math" in the list and enable it.
+1. Build the plugin: `npm install && npm run build`.
+2. Copy `dist/main.js`, `dist/styles.css`, and `manifest.json` into `<your_vault>/.obsidian/plugins/simple-table-math/`.
+3. In Obsidian, enable the plugin under `Settings` → `Community plugins`. The `.obsidian` folder may be hidden on your OS — show hidden files if needed.
 
 ## Contributing
 
