@@ -1,5 +1,6 @@
 div.markdown-rendered table.table-editor {
-	tr > td.stm-cell {
+	tr > td.stm-cell,
+	tr > th.stm-cell {
 		&.stm-value, & > .stm-value {
 			padding: var(--size-2-2) var(--size-4-2); // must be the same as the original .table-cell-wrapper
 			font-weight: calc(var(--font-weight) + var(--bold-modifier));
@@ -29,7 +30,8 @@ div.markdown-rendered table.table-editor {
 }
 
 div.el-table > table {
-	tr.stm-row > td.stm-cell {
+	tr > td.stm-cell,
+	tr > th.stm-cell {
 		&.stm-value, & > .stm-value {
 			font-weight: calc(var(--font-weight) + var(--bold-modifier));
 		}
