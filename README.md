@@ -4,6 +4,11 @@ A plugin for Obsidian that performs mathematical operations on Markdown tables.
 It dynamically calculates and displays results within your tables as you edit them.
 You can also copy the results to your clipboard, either via a keyboard shortcut or via the context menu.
 
+> **This is a fork of [eatcodeplay/obsidian-simple-table-math](https://github.com/eatcodeplay/obsidian-simple-table-math)** with the following additions:
+> - `>` (right) and `v` (down) directions, alongside the existing `^` and `<`
+> - "Skip header row" setting to exclude the header from `^` calculations
+> - Automatic restore of the formula row to the bottom of the table after inserting a new row with Obsidian's `+` button
+
 https://github.com/user-attachments/assets/af3b295f-5bbd-497f-b507-696e9fcbb690
 
 ## How to Use
@@ -20,9 +25,12 @@ The tag follows this format: `[operation][direction][start:end][currency]`
 	* `MAX`: Finds the maximum value.
 	* `SUB`: Subtracts the subsequent values from the first value.
 	* `MUL`: Multiplies all the values together.
+	* `DIV`: Divides the first value by each subsequent value in sequence.
 * **`[direction]`**: Indicates the direction of the values to operate on:
 	* `^`: Looks at the cells above the current cell in the same column.
 	* `<`: Looks at the cells to the left of the current cell in the same row.
+	* `v`: Looks at the cells below the current cell in the same column.
+	* `>`: Looks at the cells to the right of the current cell in the same row.
 * **`[start:end]`** (Optional): Specifies a range of cells to include in the calculation.
 	* If omitted, it defaults to all applicable cells in the specified direction.
 	* Use a colon-separated format (e.g., `1:3` for the first three cells). The indices are 1-based.
@@ -82,11 +90,12 @@ The correct column will ouput 1.0192e+3 while the incorrect column will output 0
 ## Key Features
 
 * **Real-time Updates:** Calculations are performed automatically as you type and edit your tables.
-* **Directional Operations:** Calculate based on values above or to the left of the tag.
+* **Directional Operations:** Calculate based on values in any of the four directions relative to the tag (`^`, `v`, `<`, `>`).
 * **Optional Range Selection:** Target specific cells for your calculations.
 * **Currency Formatting:** Display results with currency symbols for better readability.
 * **Locale-Aware Formatting:** Respects your system's locale for number formatting by default, with an option to override.
 * **Copy Results:** When copying a cell containing an operation (using `Ctrl + C` or `⌘ + C`) or the context menu, the calculated result will be copied to your clipboard.
+* **Formula Row Stays at the Bottom:** When you insert a new row with Obsidian's `+` button under a table whose last row contains a formula, the formula row automatically slides back down so the new (empty) row ends up above it.
 
 ## Settings
 
@@ -96,6 +105,7 @@ The following options are available:
 * **Fractions:** Set the number of decimal places to display in the calculated results.
 * **Number formatting:** Enter a locale code (e.g., `en-US`, `de-DE`) to override the default number formatting. If left blank, it will use the language defined for Obsidian.
 * **Highlight last row calculations:** Enable or disable styling for the last row in tables that contain calculations.
+* **Skip header row:** When enabled, the first row of each table is excluded from vertical (`^`) calculations. Useful when your header row contains numbers.
 
 ## CSS Look & Feel
 
