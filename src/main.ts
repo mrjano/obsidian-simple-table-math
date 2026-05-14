@@ -383,6 +383,7 @@ export default class SimpleTableMath extends Plugin {
 			const td = document.createElement('td');
 			td.tabIndex = -1;
 			td.setAttribute('contenteditable', 'false');
+			td.classList.add('stm-cell');
 			const sampleCell = rows[1]?.children?.[c] as HTMLTableCellElement | undefined;
 			if (sampleCell) {
 				const align = sampleCell.style.textAlign || getComputedStyle(sampleCell).textAlign;
@@ -390,9 +391,12 @@ export default class SimpleTableMath extends Plugin {
 			}
 			const value = aggValues.get(c);
 			const fmt = columnFormats.get(c);
+			const valueDiv = document.createElement('div');
+			valueDiv.classList.add('stm-value');
 			if (value !== null && value !== undefined && fmt) {
-				td.textContent = this.formatNumber(value, fmt);
+				valueDiv.textContent = this.formatNumber(value, fmt);
 			}
+			td.appendChild(valueDiv);
 			tr.appendChild(td);
 		}
 
