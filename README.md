@@ -8,6 +8,7 @@ You can also copy the results to your clipboard, either via a keyboard shortcut 
 > - `>` (right) and `v` (down) directions, alongside the existing `^` and `<`
 > - "Skip header row" setting to exclude the header from `^` calculations
 > - Automatic restore of the formula row to the bottom of the table after inserting a new row with Obsidian's `+` button
+> - Per-column number formatting via a header-cell hint (currency and/or decimal places)
 
 https://github.com/user-attachments/assets/af3b295f-5bbd-497f-b507-696e9fcbb690
 
@@ -73,6 +74,19 @@ The tag follows this format: `[operation][direction][start:end][currency]`
 | **TOTAL:**  |        |          | SUM^2:4USD |
 ```
 
+**Column formatting via header hints:**
+
+Add a `[CURRENCY]`, `[CURRENCY,DECIMALS]`, or `[,DECIMALS]` suffix to a header cell and every numeric value in that column will be displayed with that formatting. The underlying markdown stays as plain numbers — the formatting is a visual overlay (same mechanism the calculated cells use), so copy/paste and search keep working on the raw values.
+
+```
+| Item   | Price [USD]   | Qty  | Total [USD,2] | Margin [,3]  |
+| :----- | ------------: | ---: | ------------: | -----------: |
+| Apple  | 1             | 5    | MUL<          | 0.1234       |
+| Banana | 0.5           | 10   | MUL<          | 0.5          |
+```
+
+In editing mode, focusing a cell hides the overlay so you can edit the raw number; leaving the cell re-applies the formatting. If the decimal count is omitted, the global `Fractions` setting is used.
+
 **Scientific notation example:**
 
 Note: when using #e[n] format the input values must be in scientific notation and cannot include currency units.
@@ -96,6 +110,7 @@ The correct column will ouput 1.0192e+3 while the incorrect column will output 0
 * **Locale-Aware Formatting:** Respects your system's locale for number formatting by default, with an option to override.
 * **Copy Results:** When copying a cell containing an operation (using `Ctrl + C` or `⌘ + C`) or the context menu, the calculated result will be copied to your clipboard.
 * **Formula Row Stays at the Bottom:** When you insert a new row with Obsidian's `+` button under a table whose last row contains a formula, the formula row automatically slides back down so the new (empty) row ends up above it.
+* **Per-Column Formatting:** Add `[USD]`, `[USD,2]`, or `[,3]` to a header cell to format every numeric value below it with that currency and/or decimal count.
 
 ## Settings
 
