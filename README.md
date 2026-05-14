@@ -8,7 +8,7 @@ You can also copy the results to your clipboard, either via a keyboard shortcut 
 > - `>` (right) and `v` (down) directions, alongside the existing `^` and `<`
 > - "Skip header row" setting to exclude the header from `^` calculations
 > - Automatic restore of the formula row to the bottom of the table after inserting a new row with Obsidian's `+` button
-> - Per-column number formatting via a header-cell hint (currency and/or decimal places)
+> - Per-column number formatting via a header-cell hint (currency, decimal places, and optional column aggregate)
 
 https://github.com/user-attachments/assets/af3b295f-5bbd-497f-b507-696e9fcbb690
 
@@ -76,16 +76,22 @@ The tag follows this format: `[operation][direction][start:end][currency]`
 
 **Column formatting via header hints:**
 
-Add a `[CURRENCY]`, `[CURRENCY,DECIMALS]`, or `[,DECIMALS]` suffix to a header cell and every numeric value in that column will be displayed with that formatting. The underlying markdown stays as plain numbers — the formatting is a visual overlay (same mechanism the calculated cells use), so copy/paste and search keep working on the raw values.
+Add a suffix to a header cell to format every numeric value in that column. All three parts are optional, but at least one must be present:
+
+`[CURRENCY,DECIMALS,AGGREGATE]`
+
+- `CURRENCY` — 2-4 letter currency code (e.g. `USD`, `EUR`)
+- `DECIMALS` — fixed decimal places (overrides the global `Fractions` setting)
+- `AGGREGATE` — one of `sum`, `avg`, `min`, `max`, `sub`, `mul`, `div`. If present, the plugin renders a synthetic footer row at the bottom of the table with the per-column aggregate. The row is *not* part of the markdown — it lives only in the rendered table.
 
 ```
-| Item   | Price [USD]   | Qty  | Total [USD,2] | Margin [,3]  |
-| :----- | ------------: | ---: | ------------: | -----------: |
-| Apple  | 1             | 5    | MUL<          | 0.1234       |
-| Banana | 0.5           | 10   | MUL<          | 0.5          |
+| Item   | Price [USD,2,sum] | Qty [,0,sum] | Total [USD,2] | Margin [,3] |
+| :----- | ----------------: | -----------: | ------------: | ----------: |
+| Apple  | 1                 | 5            | MUL<          | 0.1234      |
+| Banana | 0.5               | 10           | MUL<          | 0.5         |
 ```
 
-In editing mode, focusing a cell hides the overlay so you can edit the raw number; leaving the cell re-applies the formatting. If the decimal count is omitted, the global `Fractions` setting is used.
+The header directive disappears from the rendered cell (showing just the label), the data cells render with the requested formatting, and a footer row at the bottom shows `$1.50` under Price and `15` under Qty. In editing mode, focusing a cell hides the overlay so you can edit the raw number; the footer row is non-editable.
 
 **Scientific notation example:**
 
@@ -111,6 +117,7 @@ The correct column will ouput 1.0192e+3 while the incorrect column will output 0
 * **Copy Results:** When copying a cell containing an operation (using `Ctrl + C` or `⌘ + C`) or the context menu, the calculated result will be copied to your clipboard.
 * **Formula Row Stays at the Bottom:** When you insert a new row with Obsidian's `+` button under a table whose last row contains a formula, the formula row automatically slides back down so the new (empty) row ends up above it.
 * **Per-Column Formatting:** Add `[USD]`, `[USD,2]`, or `[,3]` to a header cell to format every numeric value below it with that currency and/or decimal count.
+* **Synthetic Aggregate Row:** Add a third part to the directive (`[USD,2,sum]`) to render an aggregate footer row at the bottom of the table without writing it into the markdown.
 
 ## Settings
 

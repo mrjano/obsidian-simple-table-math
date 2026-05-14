@@ -34,11 +34,12 @@ const DEFAULT_SETTINGS: SimpleTableMathSettings = {
 
 const FORMULA_CELL_REGEX = /^(sum|avg|min|max|sub|mul|div)([<^>v])(\d+(?::\d+)?)?([a-z]{2,4})?(#e\d+)?$/i;
 const SEPARATOR_CELL_REGEX = /^:?-+:?$/;
-const COLUMN_FORMAT_REGEX = /\s*\[([a-z]{2,4})?(?:,(\d+))?\]\s*$/i;
+const COLUMN_FORMAT_REGEX = /\s*\[([a-z]{2,4})?(?:,(\d+))?(?:,(sum|avg|min|max|sub|mul|div))?\]\s*$/i;
 
 interface ColumnFormat {
 	currency: string | null;
 	fractions: number | undefined;
+	aggregate: string | null;
 	cleanLabel: string;
 }
 
@@ -144,6 +145,7 @@ export default class SimpleTableMath extends Plugin {
 			const exponentialRegex = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/;
 						
 			tables.forEach((table) => {
+				table.querySelectorAll('tr.stm-synthetic').forEach(r => r.remove());
 				const rows = Array.from(table.querySelectorAll('tr'));
 				const columnFormats = this.parseColumnFormats(rows);
 				rows.forEach((row, rowIndex) => {
@@ -329,9 +331,68 @@ export default class SimpleTableMath extends Plugin {
 						}
 					});
 				});
+				this.renderAggregateRow(table, rows, columnFormats);
 			});
 		}
 		this.preventProcessing = false;
+	}
+
+	renderAggregateRow(table: HTMLTableElement, rows: HTMLTableRowElement[], columnFormats: Map<number, ColumnFormat>): void {
+		const aggCols: Array<{ col: number; fmt: ColumnFormat }> = [];
+		columnFormats.forEach((fmt, col) => { if (fmt.aggregate) aggCols.push({ col, fmt }); });
+		if (aggCols.length === 0) return;
+		if (rows.length < 2) return;
+
+		const colCount = rows[0].children.length;
+		if (colCount === 0) return;
+
+		const numRegex = /-?\d+(?:[.,'’` ]\d{3})*(?:[.,]\d+)?/;
+		const aggValues = new Map<number, number | null>();
+		aggCols.forEach(({ col, fmt }) => {
+			const values: number[] = [];
+			for (let r = 1; r < rows.length; r++) {
+				const cell = rows[r]?.children?.[col] as HTMLTableCellElement | undefined | null;
+				if (!cell) continue;
+				const text = this.extractCellContent(cell);
+				const value = this.extractNumber(text, numRegex);
+				if (value !== null) values.push(value);
+			}
+			let result: number | null = null;
+			switch (fmt.aggregate) {
+				case 'sum': result = values.reduce((a, b) => a + b, 0); break;
+				case 'avg': result = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null; break;
+				case 'min': result = values.length > 0 ? Math.min(...values) : null; break;
+				case 'max': result = values.length > 0 ? Math.max(...values) : null; break;
+				case 'sub': result = values.length > 0 ? values.reduce((a, b) => a - b) : null; break;
+				case 'mul': result = values.length > 0 ? values.reduce((a, b) => a * b, 1) : null; break;
+				case 'div': {
+					if (values.length > 0) {
+						result = values[0];
+						for (let i = 1; i < values.length; i++) result = result / values[i];
+					}
+					break;
+				}
+			}
+			aggValues.set(col, result);
+		});
+
+		const tr = document.createElement('tr');
+		tr.classList.add('stm-synthetic');
+		tr.setAttribute('contenteditable', 'false');
+		for (let c = 0; c < colCount; c++) {
+			const td = document.createElement('td');
+			td.tabIndex = -1;
+			td.setAttribute('contenteditable', 'false');
+			const value = aggValues.get(c);
+			const fmt = columnFormats.get(c);
+			if (value !== null && value !== undefined && fmt) {
+				td.textContent = this.formatNumber(value, fmt);
+			}
+			tr.appendChild(td);
+		}
+
+		const tbody = table.querySelector('tbody');
+		(tbody || table).appendChild(tr);
 	}
 
 	parseColumnFormats(rows: HTMLTableRowElement[]): Map<number, ColumnFormat> {
@@ -341,10 +402,11 @@ export default class SimpleTableMath extends Plugin {
 		headerCells.forEach((cell, colIndex) => {
 			const text = this.extractCellContent(cell).trim();
 			const match = text.match(COLUMN_FORMAT_REGEX);
-			if (match && (match[1] || match[2])) {
+			if (match && (match[1] || match[2] || match[3])) {
 				formats.set(colIndex, {
 					currency: match[1] ? match[1].toUpperCase() : null,
 					fractions: match[2] ? parseInt(match[2], 10) : undefined,
+					aggregate: match[3] ? match[3].toLowerCase() : null,
 					cleanLabel: text.replace(COLUMN_FORMAT_REGEX, '').trim(),
 				});
 			}
