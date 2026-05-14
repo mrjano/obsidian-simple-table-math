@@ -383,6 +383,11 @@ export default class SimpleTableMath extends Plugin {
 			const td = document.createElement('td');
 			td.tabIndex = -1;
 			td.setAttribute('contenteditable', 'false');
+			const sampleCell = rows[1]?.children?.[c] as HTMLTableCellElement | undefined;
+			if (sampleCell) {
+				const align = sampleCell.style.textAlign || getComputedStyle(sampleCell).textAlign;
+				if (align) td.style.textAlign = align;
+			}
 			const value = aggValues.get(c);
 			const fmt = columnFormats.get(c);
 			if (value !== null && value !== undefined && fmt) {
