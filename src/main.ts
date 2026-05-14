@@ -34,6 +34,12 @@ const DEFAULT_SETTINGS: SimpleTableMathSettings = {
 
 const FORMULA_CELL_REGEX = /^(sum|avg|min|max|sub|mul|div)([<^>v])(\d+(?::\d+)?)?([a-z]{2,4})?(#e\d+)?$/i;
 const SEPARATOR_CELL_REGEX = /^:?-+:?$/;
+const COLUMN_FORMAT_REGEX = /\s*\[([a-z]{2,4})?(?:,(\d+))?\]\s*$/i;
+
+interface ColumnFormat {
+	currency: string | null;
+	fractions: number | undefined;
+}
 
 /**
  * A plugin that performs mathematical operations on Markdown tables in Obsidian.
@@ -138,6 +144,7 @@ export default class SimpleTableMath extends Plugin {
 						
 			tables.forEach((table) => {
 				const rows = Array.from(table.querySelectorAll('tr'));
+				const columnFormats = this.parseColumnFormats(rows);
 				rows.forEach((row, rowIndex) => {
 					const cells = Array.from(row.children) as HTMLTableCellElement[];
 					cells.forEach((cell, colIndex) => {
@@ -264,6 +271,31 @@ export default class SimpleTableMath extends Plugin {
 									vElement.textContent = this.formatNumber(result, { currency, exponential });
 								}
 							}
+						} else if (!isActiveElement && rowIndex > 0 && columnFormats.has(colIndex)) {
+							const fmt = columnFormats.get(colIndex)!;
+							const cellText = this.extractCellContent(cell).trim();
+							const value = this.extractNumber(cellText, defaultNumRegex);
+							if (value !== null) {
+								let vElement = cell.querySelector('div.stm-value') as HTMLElement | null;
+								if (isReadingMode) {
+									vElement = cell;
+									cell.classList.add('stm-value');
+								}
+								if (!vElement) {
+									vElement = document.createElement('div');
+									vElement.classList.add('stm-value');
+									cell.prepend(vElement);
+								}
+								if (vElement) {
+									cell.classList.add('stm-cell');
+									cell.tabIndex = -1;
+									vElement.textContent = this.formatNumber(value, fmt);
+								}
+							} else if (cell.classList.contains('stm-cell')) {
+								const vElement = cell.querySelector('div.stm-value') as HTMLElement | null;
+								if (vElement) cell.removeChild(vElement);
+								cell.classList.remove('stm-cell');
+							}
 						} else if (!isActiveElement && cell.classList.contains('stm-cell')) {
 							let vElement = cell.querySelector('div.stm-value') as HTMLElement | null;
 							if (vElement) {
@@ -282,6 +314,23 @@ export default class SimpleTableMath extends Plugin {
 			});
 		}
 		this.preventProcessing = false;
+	}
+
+	parseColumnFormats(rows: HTMLTableRowElement[]): Map<number, ColumnFormat> {
+		const formats = new Map<number, ColumnFormat>();
+		if (rows.length === 0) return formats;
+		const headerCells = Array.from(rows[0].children) as HTMLTableCellElement[];
+		headerCells.forEach((cell, colIndex) => {
+			const text = this.extractCellContent(cell).trim();
+			const match = text.match(COLUMN_FORMAT_REGEX);
+			if (match && (match[1] || match[2])) {
+				formats.set(colIndex, {
+					currency: match[1] ? match[1].toUpperCase() : null,
+					fractions: match[2] ? parseInt(match[2], 10) : undefined,
+				});
+			}
+		});
+		return formats;
 	}
 
 	restoreFormulaRowAtBottom(activeView: MarkdownView): void {
