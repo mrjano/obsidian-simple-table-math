@@ -46,3 +46,16 @@ div.el-table > table {
 	top: -3px;
 	margin-left: 8px;
 }
+
+tr.stm-synthetic {
+	background-color: var(--background-secondary);
+	font-weight: calc(var(--font-weight) + var(--bold-modifier));
+	border-top: 2px solid var(--background-modifier-border);
+
+	> td {
+		padding: var(--size-2-2) var(--size-4-2);
+		user-select: text;
+		cursor: default;
+		text-align: right;
+	}
+}
