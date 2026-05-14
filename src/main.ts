@@ -34,12 +34,13 @@ const DEFAULT_SETTINGS: SimpleTableMathSettings = {
 
 const FORMULA_CELL_REGEX = /^(sum|avg|min|max|sub|mul|div)([<^>v])(\d+(?::\d+)?)?([a-z]{2,4})?(#e\d+)?$/i;
 const SEPARATOR_CELL_REGEX = /^:?-+:?$/;
-const COLUMN_FORMAT_REGEX = /\s*\[([a-z]{2,4})?(?:,(\d+))?(?:,(sum|avg|min|max|sub|mul|div))?\]\s*$/i;
+const COLUMN_FORMAT_REGEX = /\s*\[([a-z]{2,4})?(?:,(\d+))?(?:,(sum|avg|min|max|sub|mul|div))?(?::([^\]]+))?\]\s*$/i;
 
 interface ColumnFormat {
 	currency: string | null;
 	fractions: number | undefined;
 	aggregate: string | null;
+	rowLabel: string | null;
 	cleanLabel: string;
 }
 
@@ -393,8 +394,15 @@ export default class SimpleTableMath extends Plugin {
 			const fmt = columnFormats.get(c);
 			const valueDiv = document.createElement('div');
 			valueDiv.classList.add('stm-value');
-			if (value !== null && value !== undefined && fmt) {
-				valueDiv.textContent = this.formatNumber(value, fmt);
+			if (fmt) {
+				const formatted = (value !== null && value !== undefined) ? this.formatNumber(value, fmt) : '';
+				if (fmt.rowLabel && formatted) {
+					valueDiv.textContent = `${fmt.rowLabel} ${formatted}`;
+				} else if (fmt.rowLabel) {
+					valueDiv.textContent = fmt.rowLabel;
+				} else if (formatted) {
+					valueDiv.textContent = formatted;
+				}
 			}
 			td.appendChild(valueDiv);
 			tr.appendChild(td);
@@ -411,11 +419,12 @@ export default class SimpleTableMath extends Plugin {
 		headerCells.forEach((cell, colIndex) => {
 			const text = this.extractCellContent(cell).trim();
 			const match = text.match(COLUMN_FORMAT_REGEX);
-			if (match && (match[1] || match[2] || match[3])) {
+			if (match && (match[1] || match[2] || match[3] || match[4])) {
 				formats.set(colIndex, {
 					currency: match[1] ? match[1].toUpperCase() : null,
 					fractions: match[2] ? parseInt(match[2], 10) : undefined,
 					aggregate: match[3] ? match[3].toLowerCase() : null,
+					rowLabel: match[4] ? match[4].trim() : null,
 					cleanLabel: text.replace(COLUMN_FORMAT_REGEX, '').trim(),
 				});
 			}

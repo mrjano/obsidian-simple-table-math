@@ -76,22 +76,23 @@ The tag follows this format: `[operation][direction][start:end][currency]`
 
 **Column formatting via header hints:**
 
-Add a suffix to a header cell to format every numeric value in that column. All three parts are optional, but at least one must be present:
+Add a suffix to a header cell to format every numeric value in that column. All parts are optional, but at least one must be present:
 
-`[CURRENCY,DECIMALS,AGGREGATE]`
+`[CURRENCY,DECIMALS,AGGREGATE:LABEL]`
 
 - `CURRENCY` — 2-4 letter currency code (e.g. `USD`, `EUR`)
 - `DECIMALS` — fixed decimal places (overrides the global `Fractions` setting)
 - `AGGREGATE` — one of `sum`, `avg`, `min`, `max`, `sub`, `mul`, `div`. If present, the plugin renders a synthetic footer row at the bottom of the table with the per-column aggregate. The row is *not* part of the markdown — it lives only in the rendered table.
+- `LABEL` — free text shown in the synthetic row. If the column also has an aggregate the label is prepended to the value (`Total: $1.50`); otherwise the label appears on its own (useful for putting a `Total:` marker in the leftmost column). Use `[:Label]` for a label without any other formatting.
 
 ```
-| Item   | Price [USD,2,sum] | Qty [,0,sum] | Total [USD,2] | Margin [,3] |
-| :----- | ----------------: | -----------: | ------------: | ----------: |
-| Apple  | 1                 | 5            | MUL<          | 0.1234      |
-| Banana | 0.5               | 10           | MUL<          | 0.5         |
+| Item [:Total:] | Price [USD,2,sum] | Qty [,0,sum] | Total [USD,2] | Margin [,3] |
+| :------------- | ----------------: | -----------: | ------------: | ----------: |
+| Apple          | 1                 | 5            | MUL<          | 0.1234      |
+| Banana         | 0.5               | 10           | MUL<          | 0.5         |
 ```
 
-The header directive disappears from the rendered cell (showing just the label), the data cells render with the requested formatting, and a footer row at the bottom shows `$1.50` under Price and `15` under Qty. In editing mode, focusing a cell hides the overlay so you can edit the raw number; the footer row is non-editable.
+The header directives disappear from the rendered cells (showing just the labels), the data cells render with the requested formatting, and a footer row at the bottom shows `Total:` under Item, `$1.50` under Price, and `15` under Qty. In editing mode, focusing a cell reveals the raw text so you can edit the directive; the footer row is non-editable.
 
 **Scientific notation example:**
 
