@@ -261,17 +261,7 @@ export default class SimpleTableMath extends Plugin {
 									cell.classList.add('stm-cell');
 									cell.tabIndex = -1;
 									cell.closest('tr')?.classList.add(...rowClasses);
-									const defaultLocale = getLanguage();
-									if (exponential) {
-										vElement.textContent = result.toExponential(exponential)
-									} else {
-										vElement.textContent = result.toLocaleString(this.settings.locale || defaultLocale, {
-											style: currency ? 'currency' : 'decimal',
-											currency: currency || undefined,
-											minimumFractionDigits: this.settings.fractions,
-											maximumFractionDigits: this.settings.fractions,
-										})
-									}; 
+									vElement.textContent = this.formatNumber(result, { currency, exponential });
 								}
 							}
 						} else if (!isActiveElement && cell.classList.contains('stm-cell')) {
@@ -425,6 +415,19 @@ export default class SimpleTableMath extends Plugin {
 		}
 		const wrapper = element || cell;
 		return wrapper?.textContent || '';
+	}
+
+	formatNumber(value: number, opts: { currency?: string | null; fractions?: number; exponential?: number } = {}): string {
+		if (opts.exponential) {
+			return value.toExponential(opts.exponential);
+		}
+		const fractions = opts.fractions ?? this.settings.fractions;
+		return value.toLocaleString(this.settings.locale || getLanguage(), {
+			style: opts.currency ? 'currency' : 'decimal',
+			currency: opts.currency || undefined,
+			minimumFractionDigits: fractions,
+			maximumFractionDigits: fractions,
+		});
 	}
 
 	extractNumber(str: string | null, numRegex: RegExp): number | null{
