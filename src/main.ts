@@ -39,6 +39,7 @@ const COLUMN_FORMAT_REGEX = /\s*\[([a-z]{2,4})?(?:,(\d+))?\]\s*$/i;
 interface ColumnFormat {
 	currency: string | null;
 	fractions: number | undefined;
+	cleanLabel: string;
 }
 
 /**
@@ -271,6 +272,23 @@ export default class SimpleTableMath extends Plugin {
 									vElement.textContent = this.formatNumber(result, { currency, exponential });
 								}
 							}
+						} else if (!isActiveElement && rowIndex === 0 && columnFormats.has(colIndex)) {
+							const fmt = columnFormats.get(colIndex)!;
+							let vElement = cell.querySelector('div.stm-value') as HTMLElement | null;
+							if (isReadingMode) {
+								vElement = cell;
+								cell.classList.add('stm-value');
+							}
+							if (!vElement) {
+								vElement = document.createElement('div');
+								vElement.classList.add('stm-value');
+								cell.prepend(vElement);
+							}
+							if (vElement) {
+								cell.classList.add('stm-cell');
+								cell.tabIndex = -1;
+								vElement.textContent = fmt.cleanLabel;
+							}
 						} else if (!isActiveElement && rowIndex > 0 && columnFormats.has(colIndex)) {
 							const fmt = columnFormats.get(colIndex)!;
 							const cellText = this.extractCellContent(cell).trim();
@@ -327,6 +345,7 @@ export default class SimpleTableMath extends Plugin {
 				formats.set(colIndex, {
 					currency: match[1] ? match[1].toUpperCase() : null,
 					fractions: match[2] ? parseInt(match[2], 10) : undefined,
+					cleanLabel: text.replace(COLUMN_FORMAT_REGEX, '').trim(),
 				});
 			}
 		});
