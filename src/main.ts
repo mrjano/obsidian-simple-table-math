@@ -460,6 +460,13 @@ export default class SimpleTableMath extends Plugin {
 			return cells.length > 0 && cells.every(c => SEPARATOR_CELL_REGEX.test(c));
 		};
 
+		// Only operate on genuine markdown tables, which always have a separator
+		// row (| --- | --- |) directly under the header. Without this check any
+		// block of pipe-prefixed lines (e.g. an example table inside a fenced
+		// code block) is treated as a table and gets its rows reordered, which
+		// moves the cursor in notes that have no real table.
+		if (!isSeparator(editor.getLine(tableStart + 1))) return;
+
 		const lastLine = editor.getLine(tableEnd);
 		const secondLastLine = editor.getLine(tableEnd - 1);
 		if (lineHasFormula(lastLine)) return;
